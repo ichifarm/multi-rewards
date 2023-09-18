@@ -1,35 +1,36 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.12;
+pragma solidity 0.8.12;
 pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
-
-import {IHypervisor} from "interfaces/IHypervisor.sol";
-
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {IHypervisor} from "./interfaces/IHypervisor.sol";
 /// @title Multi Fee Distribution Contract
 /// @author Gamma
 /// @dev All function calls are currently implemented without side effects
+import {console} from "hardhat/console.sol";
+
 contract MultiFeeDistribution is
-    Pausable,
-    Ownable
+    Initializable,
+    PausableUpgradeable,
+    OwnableUpgradeable
 {
     using SafeERC20 for IERC20;
 
     struct RewardData {
         uint256 amount;
-        uint256 lastTimeUpdated; // seems like it exists only for a null check in recoverERC20? i.e. if active reward don't allow owner to recover the reward token
+        uint256 lastTimeUpdated;
         uint256 rewardPerToken;
     }
 
     struct UserData {
         uint256 tokenAmount;
-        uint256 lastTimeUpdated; // TODO: is this even really needed??
-        uint256 tokenClaimable; // TODO: is this even used??
+        uint256 lastTimeUpdated;
+        uint256 tokenClaimable;
         mapping(address => uint256) rewardPerToken;
     }
     /********************** Contract Addresses ***********************/
@@ -82,24 +83,21 @@ contract MultiFeeDistribution is
     error InvalidBurn();
     error InsufficientPermission();
     error ActiveReward();
-    error IsStakingToken();
     error InvalidAmount();
-
-    constructor() {
-        // TODO: consider calling initialize
-        // initialize(_rewardTokens);
-    }
 
     /**
      * @dev Constructor
      */
     function initialize(
         address[] memory _rewardTokens
-    ) internal {
+    ) public initializer {
         for (uint i; i < _rewardTokens.length; i ++) {
             if (_rewardTokens[i] == address(0)) revert InvalidBurn();
             rewardTokens.push(_rewardTokens[i]);
         }
+
+        __Pausable_init();
+        __Ownable_init();
     }
 
     /********************** Setters ***********************/
@@ -128,8 +126,6 @@ contract MultiFeeDistribution is
         }
     }
 
-    // TODO: consider removing this and tightly coupling a single staking contract to a single ICHI vault via a staking contract factory
-    // if the above is done then the stakingToken can be immutable
     /**
      * @notice Set LP token.
      * @param _stakingToken LP token address
@@ -164,7 +160,6 @@ contract MultiFeeDistribution is
         address tokenAddress,
         uint256 tokenAmount
     ) external onlyOwner {
-        if (tokenAddress == stakingToken) revert IsStakingToken();
         if (rewardData[tokenAddress].lastTimeUpdated > 0) revert ActiveReward();
         IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
         emit Recovered(tokenAddress, tokenAmount);
@@ -180,19 +175,12 @@ contract MultiFeeDistribution is
         return userData[user].tokenAmount;
     }
 
-    /// @dev added this function as it doesn't seem possible to get this using the ABI
-    ///      https://ethereum.stackexchange.com/questions/143185/retreive-a-mapping-nested-inside-a-struct-from-ethers
-    function getUserRewardPerToken(address user, address rewardToken) external view returns (uint256) {
-        return userData[user].rewardPerToken[rewardToken];
-    }
-
     /********************** Reward functions ***********************/
 
     /**
      * @notice Address and claimable amount of all reward tokens for the given account.
      * @param account for rewards
      * @return rewardsData array of rewards
-     * @dev this estimation doesn't include rewards that are yet to be collected from the IHypervisor via getRewards
      */
     function claimableRewards(
         address account
@@ -236,7 +224,7 @@ contract MultiFeeDistribution is
         uint256 amount,
         address onBehalfOf
     ) internal whenNotPaused {
-        if (amount == 0) revert InvalidAmount();
+        if (amount == 0) return;
         _updateReward();
 
         for (uint i; i < rewardTokens.length; i ++) {
@@ -356,8 +344,8 @@ contract MultiFeeDistribution is
             if (claimable[token][_user] > 0) {
                 IERC20(token).safeTransfer(_user, claimable[token][_user]);
                 r.amount -= claimable[token][_user];
-                emit RewardPaid(_user, token, claimable[token][_user]);
                 claimable[token][_user] = 0;
+                emit RewardPaid(_user, token, claimable[token][_user]);
             }
         }
     }
