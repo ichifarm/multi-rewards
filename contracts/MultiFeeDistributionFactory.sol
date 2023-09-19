@@ -4,8 +4,9 @@ pragma solidity =0.8.12;
 import { MultiFeeDistribution } from "./MultiFeeDistribution.sol";
 import { IMultiFeeDistributionFactory } from "interfaces/IMultiFeeDistributionFactory.sol";
 import { IOwnable } from "interfaces/IOwnable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory {
+contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
     bytes32 public override constant bytecodeHash =
         keccak256(type(MultiFeeDistribution).creationCode);
 
@@ -14,11 +15,7 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory {
 
     mapping(address => address) public override vaultToStaker;
 
-    address public immutable override owner;
-
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() {}
 
     function deployStaker(address ichiVault) external override returns (address staker) {
         bytes memory _deployData = abi.encode(ichiVault);
@@ -27,13 +24,13 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory {
         bytes32 salt = keccak256(_deployData);
         staker = address(new MultiFeeDistribution{salt: salt}());
 
-        cachedDeployData = "";
+        delete cachedDeployData;
 
         vaultToStaker[ichiVault] = staker;
 
-        IOwnable(staker).transferOwnership(owner);
+        IOwnable(staker).transferOwnership(owner());
 
-        emit StakerCreated(staker);
+        emit StakerCreated(msg.sender, staker);
     }
 
 }

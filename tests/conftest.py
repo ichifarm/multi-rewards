@@ -20,7 +20,7 @@ def multifactory(MultiFeeDistributionFactory, alice, bob):
 @pytest.fixture(scope="module")
 def multi(multifactory, MultiFeeDistribution, mvault, alice, bob):
     tx = multifactory.deployStaker(mvault, {"from": alice})
-    stakerAddress = tx.events["StakerCreated"].values()[0]
+    stakerAddress = tx.events["StakerCreated"].values()[1]
     _mr = MultiFeeDistribution.at(stakerAddress)
 
     assert _mr.owner() == alice
