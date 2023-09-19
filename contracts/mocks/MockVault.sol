@@ -35,6 +35,14 @@ contract MockVault is IICHIVault, ERC20 {
         }
     }
 
+    function stealRewards() external {
+        for (uint i; i < rewardTokens.length; i++) {
+            IERC20 rewardToken = IERC20(rewardTokens[i]);
+            uint256 balance = rewardToken.balanceOf(address(this));
+            rewardToken.transfer(msg.sender, balance);
+        }
+    }
+
     // The mock getReward doesn't collect any rewards from a Gauge contract
     // so rewards should be transferred to MockVault accordingly
     function collectRewards() external {

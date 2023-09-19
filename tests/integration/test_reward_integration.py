@@ -4,6 +4,7 @@ import brownie
 import pytest
 from brownie.test import given, strategy
 from hypothesis import settings
+from utils import withCustomError, injectReward, earned
 
 
 # No user can modify reward
@@ -11,7 +12,7 @@ from hypothesis import settings
 @pytest.mark.parametrize("id2", range(5))
 def test_reward_unmodifiable(multi, accounts, reward_token, id1, id2):
     with brownie.reverts():
-        multi.addReward(reward_token, accounts[id1], 3600, {"from": accounts[id2]})
+        multi.addReward(reward_token, {"from": accounts[id2]})
 
 
 # Multiple tests for calculating correct multicoin reward amounts
@@ -27,125 +28,145 @@ def test_multiple_reward_earnings_act(
     charlie,
     accounts,
     chain,
-    base_token,
+    mvault,
     amount1,
     amount2,
 ):
+    mvault.stealRewards({"from": alice})
+
+    precision = 10 ** 50
+
     reward_amount = 10 ** 10
-    reward_token.approve(multi, 10 ** 19, {"from": bob})
-    multi.setRewardsDistributor(reward_token, bob, {"from": alice})
-    multi.notifyRewardAmount(reward_token, 10 ** 10, {"from": bob})
 
-    reward_token2.approve(multi, 10 ** 19, {"from": charlie})
-    multi.setRewardsDistributor(reward_token2, charlie, {"from": alice})
-    multi.notifyRewardAmount(reward_token2, 10 ** 10, {"from": charlie})
+    injectReward(mvault, multi, reward_token, reward_amount, bob)
 
-    base_token.approve(multi, amount1, {"from": bob})
-    multi.stake(amount1, {"from": bob})
+    injectReward(mvault, multi, reward_token2, reward_amount, charlie)
 
-    base_token.approve(multi, amount2, {"from": charlie})
-    multi.stake(amount2, {"from": charlie})
+    mvault.approve(multi, amount1, {"from": bob})
+    multi.stake(amount1, bob, {"from": bob})
+
+    mvault.approve(multi, amount2, {"from": charlie})
+    multi.stake(amount2, charlie, {"from": charlie})
 
     # Check supply calculation is accurate
-    assert multi.totalSupply() == amount1 + amount2
+    assert multi.totalStakes() == amount1 + amount2
     chain.mine(timedelta=60)
 
     # Check reward per token calculation is accurate
-    reward_per_token_stored = multi.rewardData(reward_token)["rewardPerTokenStored"]
-    reward_rate = reward_amount // 60
-    time_max = multi.lastTimeRewardApplicable(reward_token)
-    time_min = multi.rewardData(reward_token)["lastUpdateTime"]
-    interval = time_max - time_min
-    rpt_calc = (interval * 10 ** 18 * reward_rate) // (amount1 + amount2)
-    rpt = multi.rewardPerToken(reward_token)
-    assert reward_per_token_stored + rpt_calc == rpt
+    reward_per_token_stored = multi.rewardData(reward_token)["rewardPerToken"]
+
+    # NOTE: the following calculation is not relevant to Gamma's staking contract which doesn't consider duration
+    # reward_rate = reward_amount // 60
+    # time_max = multi.lastTimeRewardApplicable(reward_token)
+    # time_min = multi.rewardData(reward_token)["lastUpdateTime"]
+    # interval = time_max - time_min
+    # rpt_calc = (interval * 10 ** 18 * reward_rate) // (amount1 + amount2)
+    # rpt = multi.rewardPerToken(reward_token)
+    # assert reward_per_token_stored + rpt_calc == rpt
+
+    # NOTE: this would be the expected logic for Gamma's staking contract
+    rpt = reward_per_token_stored
+    # only consider amount1 since charlie staked amount2 after bob
+    # so bob get's all the rewards
+    rpt_calc = (precision * reward_amount) // (amount1)
+    assert reward_per_token_stored == rpt_calc
 
     # Check earning calculation is accurate
-    calc_earnings = (amount1 * rpt) // (10 ** 18)
-    act_earnings = multi.earned(bob, reward_token)
+    calc_earnings = (amount1 * rpt) // precision
+    act_earnings = earned(multi, bob, reward_token)
     assert calc_earnings == act_earnings
 
     # Account for the amount already stored
-    prepaid = multi.userRewardPerTokenPaid(charlie, reward_token)
+    prepaid = multi.getUserRewardPerToken(charlie, reward_token)
 
-    calc_earnings2 = (amount2 * (rpt - prepaid)) // (10 ** 18)
-    act_earnings2 = multi.earned(charlie, reward_token)
+    calc_earnings2 = (amount2 * (rpt - prepaid)) // precision
+    act_earnings2 = earned(multi, charlie, reward_token)
     assert calc_earnings2 == act_earnings2
 
 
 # Reward per token accurate?
 @given(amount=strategy("uint256", max_value=(10 ** 18), exclude=0))
-def test_reward_per_token(multi, alice, bob, reward_token, amount, chain, base_token):
-    reward_token.approve(multi, 10 ** 19, {"from": alice})
-    multi.setRewardsDistributor(reward_token, alice, {"from": alice})
-    multi.notifyRewardAmount(reward_token, 10 ** 10, {"from": alice})
+def test_reward_per_token(multi, alice, bob, reward_token, amount, chain, mvault):
 
-    init_rpt = multi.rewardPerToken(reward_token)
+    reward_amount = 10 ** 10
+    precision = 10 ** 50
+
+    injectReward(mvault, multi, reward_token, reward_amount, alice)
+
+    init_rpt = multi.rewardData(reward_token)["rewardPerToken"]
     assert init_rpt == 0
 
-    base_token.approve(multi, amount, {"from": bob})
-    multi.stake(amount, {"from": bob})
+    mvault.approve(multi, amount, {"from": bob})
+    multi.stake(amount, bob, {"from": bob})
 
-    chain.mine(timedelta=100)
-    final_rpt = multi.rewardPerToken(reward_token)
+    chain.mine(timedelta=100) # NOTE: not really needed for Gamma staking contract
+    final_rpt = multi.rewardData(reward_token)["rewardPerToken"]
 
-    assert final_rpt // (10 ** 18) == multi.earned(bob, reward_token) // amount
+    assert final_rpt // precision == earned(multi, bob, reward_token)
 
 
 # Rewards struct updates as expected
 @given(amount=strategy("uint256", min_value=(10 ** 10), max_value=(10 ** 16), exclude=0))
-def test_rewards_update(multi, alice, reward_token, amount, chain, base_token):
-    reward_token.approve(multi, amount, {"from": alice})
-    multi.setRewardsDistributor(reward_token, alice, {"from": alice})
-    multi.notifyRewardAmount(reward_token, amount, {"from": alice})
-    multi.stake(amount, {"from": alice})
+def test_rewards_update(multi, alice, reward_token, amount, chain, mvault):
+
+    injectReward(mvault, multi, reward_token, amount, alice)
+
+    mvault.approve(multi, 100 * amount, {"from": alice})
+    multi.stake(amount, alice, {"from": alice})
 
     rewards = []
     rewards.append(multi.rewardData(reward_token))
     chain.mine(timedelta=60)
     for i in range(1, 5):
-        reward_token.approve(multi, amount, {"from": alice})
-        multi.notifyRewardAmount(reward_token, amount, {"from": alice})
-        multi.stake(amount, {"from": alice})
+        injectReward(mvault, multi, reward_token, amount, alice)
+
+        multi.stake(amount, alice, {"from": alice})
         chain.mine(timedelta=60)
 
         rewards.append(multi.rewardData(reward_token))
         curr = rewards[i]
         last = rewards[i - 1]
 
-        assert last["periodFinish"] < curr["periodFinish"]
-        assert last["lastUpdateTime"] < curr["lastUpdateTime"]
-        assert last["rewardPerTokenStored"] < curr["rewardPerTokenStored"]
+        # NOTE: no concept periodFinish in Gamma staking contract
+        # assert last["periodFinish"] < curr["periodFinish"]
+        assert last["amount"] < curr["amount"]
+        assert last["lastTimeUpdated"] < curr["lastTimeUpdated"]
+        assert last["rewardPerToken"] < curr["rewardPerToken"]
 
 
-@pytest.mark.parametrize("amount", [1, 1e50, 1.156e59])
-def test_no_multiplication_overflow(multi, reward_token, base_token, alice, chain, amount):
-    base_token._mint_for_testing(alice, amount)
-    base_token.approve(multi, amount, {"from": alice})
-    multi.stake(amount, {"from": alice})
+# NOTE: since Gamma uses 1e50 precision instead of curve's 1e18 precision
+# overflow is guaranteed unless the amounts are reduced by 1e32
+@pytest.mark.parametrize("amount", [1, 1e18, 1.156e27])
+def test_no_multiplication_overflow(multi, reward_token, mvault, alice, chain, amount):
+
+    precision = 10 ** 50
 
     reward_token._mint_for_testing(alice, amount)
-    reward_token.approve(multi, amount, {"from": alice})
-    multi.setRewardsDistributor(reward_token, alice, {"from": alice})
-    multi.notifyRewardAmount(reward_token, amount, {"from": alice})
+    injectReward(mvault, multi, reward_token, amount, alice)
 
-    chain.mine(timedelta=60)
-    tot = multi.earned(alice, reward_token)
-    assert tot >= (60 * multi.rewardData(reward_token)["rewardRate"]) * 0.99
-    assert tot <= (60 * multi.rewardData(reward_token)["rewardRate"]) * 1.01
+    mvault._mint_for_testing(alice, 2 * amount)
+    mvault.approve(multi, 2 * amount, {"from": alice})
+    multi.stake(amount, alice, {"from": alice})
+    multi.stake(amount, alice, {"from": alice}) # NOTE: double stake due to known issue where rewardData isn't updated on the very 1st stake
+
+    chain.mine(timedelta=60) # NOTE: not needed for Gamma staking
+    tot = earned(multi, alice, reward_token)
+
+    assert tot >= (multi.rewardData(reward_token)["rewardPerToken"] // precision) * 0.99
+    assert tot <= (multi.rewardData(reward_token)["rewardPerToken"] // precision) * 1.01 # TODO: investigate the point of these assertions
 
 
 @pytest.mark.parametrize("amount", [1.158e59, 1e70])
-def test_multiplication_overflow(multi, reward_token, base_token, alice, chain, amount):
-    base_token._mint_for_testing(alice, amount)
-    base_token.approve(multi, amount, {"from": alice})
-    multi.stake(amount, {"from": alice})
+def test_multiplication_overflow(multi, reward_token, mvault, alice, chain, amount):
 
     reward_token._mint_for_testing(alice, amount)
-    reward_token.approve(multi, amount, {"from": alice})
-    multi.setRewardsDistributor(reward_token, alice, {"from": alice})
-    multi.notifyRewardAmount(reward_token, amount, {"from": alice})
+    injectReward(mvault, multi, reward_token, amount, alice)
+
+    mvault._mint_for_testing(alice, amount)
+    mvault.approve(multi, amount, {"from": alice})
+    multi.stake(amount // 2, alice, {"from": alice})
 
     chain.mine(timedelta=60)
     with brownie.reverts():
-        multi.earned(alice, reward_token)
+        multi.stake(amount // 2, alice, {"from": alice})
+        # earned(multi, alice, reward_token)

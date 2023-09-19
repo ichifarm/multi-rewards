@@ -261,7 +261,7 @@ contract MultiFeeDistribution is
 
     function _unstake(uint256 amount, address onBehalfOf) internal {
         UserData storage userInfo = userData[onBehalfOf];
-        if (userInfo.tokenAmount < amount)
+        if (userInfo.tokenAmount < amount || amount == 0)
             revert InvalidAmount();
         _updateReward();
         for (uint i; i < rewardTokens.length; i ++) {
