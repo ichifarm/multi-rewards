@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.12;
-pragma abicoder v2;
+pragma solidity =0.8.12;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -10,6 +9,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 import {IICHIVault} from "interfaces/IICHIVault.sol";
+import { IMultiFeeDistributionFactory } from "interfaces/IMultiFeeDistributionFactory.sol";
 
 /// @title Multi Fee Distribution Contract
 /// @author Gamma
@@ -35,7 +35,7 @@ contract MultiFeeDistribution is
     /********************** Contract Addresses ***********************/
 
     /// @notice Address of LP token
-    address public stakingToken;
+    address public immutable stakingToken;
 
     /********************** Lock & Earn Info ***********************/
 
@@ -86,20 +86,12 @@ contract MultiFeeDistribution is
     error InvalidAmount();
 
     constructor() {
-        // TODO: consider calling initialize
-        // initialize(_rewardTokens);
-    }
+        IMultiFeeDistributionFactory factory = IMultiFeeDistributionFactory(msg.sender);
+        bytes memory _deployData = factory.cachedDeployData();
+        (address _stakingToken) = abi.decode(_deployData, (address));
 
-    /**
-     * @dev Constructor
-     */
-    function initialize(
-        address[] memory _rewardTokens
-    ) internal {
-        for (uint i; i < _rewardTokens.length; i ++) {
-            if (_rewardTokens[i] == address(0)) revert InvalidBurn();
-            rewardTokens.push(_rewardTokens[i]);
-        }
+        if (_stakingToken == address(0)) revert AddressZero();
+        stakingToken = _stakingToken;
     }
 
     /********************** Setters ***********************/
@@ -126,18 +118,6 @@ contract MultiFeeDistribution is
             if (_managers[i] == address(0)) revert AddressZero();
             managers[_managers[i]] = false;
         }
-    }
-
-    // TODO: consider removing this and tightly coupling a single staking contract to a single ICHI vault via a staking contract factory
-    // if the above is done then the stakingToken can be immutable
-    /**
-     * @notice Set LP token.
-     * @param _stakingToken LP token address
-     */
-    function setStakingToken(address _stakingToken) external onlyOwner {
-        if (_stakingToken == address(0)) revert AddressZero();
-        if (stakingToken != address(0)) revert AddressZero();
-        stakingToken = _stakingToken;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 import pytest
 from brownie_tokens.template import ERC20
+from brownie.network.contract import Contract
 
 
 # Reset
@@ -9,13 +10,22 @@ from brownie_tokens.template import ERC20
 def isolate(fn_isolation):
     pass
 
+@pytest.fixture(scope="module")
+def multifactory(MultiFeeDistributionFactory, alice, bob):
+    _mrFactory = MultiFeeDistributionFactory.deploy({"from": alice})
+    assert _mrFactory.owner() == alice
+    return _mrFactory
 
 # Instantiate MultiFeeDistribution contract and approve the base token for transfers
 @pytest.fixture(scope="module")
-def multi(MultiFeeDistribution, mvault, alice, bob):
-    _mr = MultiFeeDistribution.deploy({"from": alice})
+def multi(multifactory, MultiFeeDistribution, mvault, alice, bob):
+    tx = multifactory.deployStaker(mvault, {"from": alice})
+    stakerAddress = tx.events["StakerCreated"].values()[0]
+    _mr = MultiFeeDistribution.at(stakerAddress)
+
+    assert _mr.owner() == alice
+
     mvault.approve(_mr, 10 ** 19, {"from": alice})
-    _mr.setStakingToken(mvault, {"from": alice}) # TODO: consider moving setStakingToken into it's own fixture to keep the multi fixture minimal
     return _mr
 
 
