@@ -4,10 +4,10 @@ pragma solidity >=0.8.12;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IHypervisor} from "interfaces/IHypervisor.sol";
+import {IICHIVault} from "interfaces/IICHIVault.sol";
 
 // the MockVault is the stakingToken
-contract MockVault is IHypervisor, ERC20 {
+contract MockVault is IICHIVault, ERC20 {
     address[] public rewardTokens;
     mapping(address => bool) internal isRewardToken;
     address public farmingContract;
@@ -37,7 +37,7 @@ contract MockVault is IHypervisor, ERC20 {
 
     // The mock getReward doesn't collect any rewards from a Gauge contract
     // so rewards should be transferred to MockVault accordingly
-    function getReward() external {
+    function collectRewards() external {
         for (uint i; i < rewardTokens.length; i++) {
             IERC20 rewardToken = IERC20(rewardTokens[i]);
             uint256 balance = rewardToken.balanceOf(address(this));

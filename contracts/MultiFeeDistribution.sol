@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
-import {IHypervisor} from "interfaces/IHypervisor.sol";
+import {IICHIVault} from "interfaces/IICHIVault.sol";
 
 /// @title Multi Fee Distribution Contract
 /// @author Gamma
@@ -192,7 +192,7 @@ contract MultiFeeDistribution is
      * @notice Address and claimable amount of all reward tokens for the given account.
      * @param account for rewards
      * @return rewardsData array of rewards
-     * @dev this estimation doesn't include rewards that are yet to be collected from the IHypervisor via getRewards
+     * @dev this estimation doesn't include rewards that are yet to be collected from the ICHIVault via collectRewards
      */
     function claimableRewards(
         address account
@@ -313,7 +313,7 @@ contract MultiFeeDistribution is
      * @notice Update user reward info.
      */
     function _updateReward() internal {
-        IHypervisor(stakingToken).getReward();
+        IICHIVault(stakingToken).collectRewards();
         for (uint i; i < rewardTokens.length; i ++) {
             address rewardToken = rewardTokens[i];
             if (totalStakes > 0) {
