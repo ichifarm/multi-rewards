@@ -18,5 +18,5 @@ def test_place_stake(multi, accounts, mvault, reward_token, idx):
 @pytest.mark.parametrize("idx", range(6, 10))
 def test_no_unbanked_stake(multi, accounts, mvault, idx):
     mvault.approve(multi, 1000000, {"from": accounts[idx]})
-    with brownie.reverts(withCustomError("insufficient balance")):
+    with brownie.reverts("ERC20: transfer amount exceeds balance"):
         multi.stake(1000000, accounts[idx], {"from": accounts[idx]})
