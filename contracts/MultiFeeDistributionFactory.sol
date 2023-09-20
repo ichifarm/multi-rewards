@@ -24,6 +24,8 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
 
     function deployStaker(address ichiVault) external override returns (address staker) {
 
+        // NOTE: this doesn't ensure tight coupling, and serves more of a sanity check
+        // it's not easily possible to check if an ichiVault is registered with v1 of the ICHIVaultFactory
         require(IICHIVault(ichiVault).ichiVaultFactory() == ichiFactory, "INVALID_VF");
 
         bytes memory _deployData = abi.encode(ichiVault);
