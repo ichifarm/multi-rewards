@@ -4,6 +4,7 @@ pragma solidity =0.8.12;
 import { MultiFeeDistribution } from "./MultiFeeDistribution.sol";
 import { IMultiFeeDistributionFactory } from "interfaces/IMultiFeeDistributionFactory.sol";
 import { IOwnable } from "interfaces/IOwnable.sol";
+import { IICHIVault } from "interfaces/IICHIVault.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
@@ -15,9 +16,16 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
 
     mapping(address => address) public override vaultToStaker;
 
-    constructor() {}
+    address public immutable ichiFactory;
+
+    constructor(address _ichiFactory) {
+        ichiFactory = _ichiFactory;
+    }
 
     function deployStaker(address ichiVault) external override returns (address staker) {
+
+        require(IICHIVault(ichiVault).ichiVaultFactory() == ichiFactory, "INVALID_VF");
+
         bytes memory _deployData = abi.encode(ichiVault);
         cachedDeployData = _deployData;
 

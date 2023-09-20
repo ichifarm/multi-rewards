@@ -3,7 +3,19 @@
 import pytest
 from brownie_tokens.template import ERC20
 from brownie.network.contract import Contract
+from eth_utils import to_hex
 
+def number_to_address(number: int) -> str:
+    # Ensure number is within bounds
+    if number >= 2**160:
+        raise ValueError("Number is too large to be represented as an Ethereum address.")
+
+    hex_representation = to_hex(number)[2:]  # Convert number to hex and remove the '0x' prefix
+    address = '0x' + hex_representation.zfill(40)  # Add leading zeros to make it 40 characters long
+
+    return address
+
+mockIVFactoryAddress = number_to_address(123)
 
 # Reset
 @pytest.fixture(scope="function", autouse=True)
@@ -12,7 +24,7 @@ def isolate(fn_isolation):
 
 @pytest.fixture(scope="module")
 def multifactory(MultiFeeDistributionFactory, alice, bob):
-    _mrFactory = MultiFeeDistributionFactory.deploy({"from": alice})
+    _mrFactory = MultiFeeDistributionFactory.deploy(mockIVFactoryAddress, {"from": alice})
     assert _mrFactory.owner() == alice
     return _mrFactory
 
@@ -31,9 +43,11 @@ def multi(multifactory, MultiFeeDistribution, mvault, alice, bob):
 
 # Instantiate MockVault staking token contract, this basically serves the purpose of the base token(i.e. base_token) fixture
 @pytest.fixture(scope="module")
-def mvault(MockVault, accounts, alice):
+def mvault(MockVault, multifactory, accounts, alice):
     totalSupply = 6 * 10 ** 19 # each of the 6 account gets an equal share
     _mv = MockVault.deploy(totalSupply, {"from": alice})
+
+    _mv.setIchiVaultFactory(mockIVFactoryAddress)
 
     for idx in range(1, 5):
         _mv.transfer(accounts[idx], 10 ** 19, {"from": alice})

@@ -12,12 +12,18 @@ contract MockVault is IICHIVault, ERC20 {
     mapping(address => bool) internal isRewardToken;
     address public farmingContract;
 
+    address public ichiVaultFactory;
+
     constructor(uint256 initialSupply) ERC20("Gold", "GLD") {
         _mint(msg.sender, initialSupply);
     }
 
     function _mint_for_testing(address account, uint256 amount) external {
         _mint(account, amount);
+    }
+
+    function setIchiVaultFactory(address vaultFactory) external {
+        ichiVaultFactory = vaultFactory;
     }
 
     function setFarmingContract(address _farmingContract) external {
