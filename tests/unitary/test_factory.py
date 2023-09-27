@@ -18,7 +18,7 @@ def number_to_address(number: int) -> str:
 # Cannot instantiate/create a staker for a vault that already has a staker created
 def test_cannot_deploy_staker_twice(multifactory, mvault, alice):
     multifactory.deployStaker(mvault, {"from": alice})
-    with brownie.reverts():
+    with brownie.reverts("ALREADY_DEPLOYED"):
         multifactory.deployStaker(mvault, {"from": alice})
 
 
