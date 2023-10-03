@@ -3,7 +3,7 @@ A modified version of the [Synthetix](https://github.com/Synthetixio/synthetix) 
 
 ## Overview
 
-The [`MultiRewards`](contracts/MultiRewards.sol) contract in this repository enables distribution of multiple reward tokens for staked users. It is a flattened and modified version of the SNX [staking rewards](https://github.com/Synthetixio/synthetix/blob/master/contracts/StakingRewards.sol) contract.
+The [`MultiFeeDistribution`](contracts/MultiFeeDistribution.sol) contract in this repository enables distribution of multiple reward tokens for staked users. It is a flattened and modified version of the SNX [staking rewards](https://github.com/Synthetixio/synthetix/blob/master/contracts/StakingRewards.sol) contract.
 
 ## How it Works
 
@@ -28,7 +28,7 @@ Keep the following in mind when using the `MultiReward` contract:
  * Calling `exit` combines both `getReward` and `withdraw` in one endpoint.
  * While the rewards period is active, the contract will automatically update all reward balances anytime most mutative functions are called (`stake`, `withdraw`, `exit`, `getReward`, or `notifyRewardAmount`)
  * The _Owner_ may call `recoverERC20` to transfer reward tokens, but not the staking token. Claiming rewards may fail if this function drains the balance.
- * In order to transfer ERC20 tokens to the contract, you must first call the `approve` function on the token's contract and authorize `MultiRewards` to transfer the correct amount.
+ * In order to transfer ERC20 tokens to the contract, you must first call the `approve` function on the token's contract and authorize `MultiFeeDistribution` to transfer the correct amount.
 
 ## Dependencies
 
@@ -36,6 +36,27 @@ Keep the following in mind when using the `MultiReward` contract:
 * [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.13.0](https://github.com/eth-brownie/brownie/releases/tag/v1.12.0)
 * [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.12.1](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.12.1)
 * [brownie-token-tester](https://github.com/iamdefinitelyahuman/brownie-token-tester)
+
+Environment Deps:
+
+```
+node@16.17.0
+ganache-cli@6.12.1; NB: NOT ganache; run "preinstall" script in package.json
+python@3.9.6
+```
+
+## Installation
+
+Once-off to init venv if not
+```shell
+python3 -m venv venv
+```
+
+Activate venv terminal and then install deps in venv
+```
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Testing
 
