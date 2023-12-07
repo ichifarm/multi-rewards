@@ -254,19 +254,20 @@ contract MultiFeeDistribution is
 
         emit Unstake(onBehalfOf, amount);
     }
+
     /**
      * @notice Claim all pending staking rewards.
      * @param _rewardTokens array of reward tokens
      */
-    function getReward(address _onBehalfOf, address[] memory _rewardTokens) external {
-        _getReward(_onBehalfOf, _rewardTokens);
+    function getReward(address _onBehalfOf, address[] memory _rewardTokens) external returns (uint256[] memory claimableAmounts) {
+        claimableAmounts = _getReward(_onBehalfOf, _rewardTokens);
     }
 
     /**
      * @notice Claim all pending staking rewards.
      */
-    function getAllRewards() external {
-        _getReward(msg.sender, rewardTokens);
+    function getAllRewards() external returns (uint256[] memory claimableAmounts) {
+        claimableAmounts = _getReward(msg.sender, rewardTokens);
     }
 
     function updateReward() external {
@@ -327,13 +328,19 @@ contract MultiFeeDistribution is
     function _getReward(
         address _user,
         address[] memory _rewardTokens
-    ) internal whenNotPaused {
-        for (uint256 i; i < _rewardTokens.length; i ++) {
+    ) internal whenNotPaused returns (uint256[] memory claimableAmounts) {
+
+        claimableAmounts = new uint256[](_rewardTokens.length);
+
+        for (uint256 i; i < _rewardTokens.length; i++) {
             address token = _rewardTokens[i];
             RewardData storage r = rewardData[token];
             _updateReward();
             _calculateClaimable(_user, token);
             if (claimable[token][_user] > 0) {
+                // we store the claimableAmount for this current rewardToken
+                claimableAmounts[i] = claimable[token][_user];
+
                 IERC20(token).safeTransfer(_user, claimable[token][_user]);
                 r.amount -= claimable[token][_user];
                 emit RewardPaid(_user, token, claimable[token][_user]);
