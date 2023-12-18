@@ -10,3 +10,5 @@ cache/
 Flattened.sol
 
 venv/
+
+!build/contracts/MultiFeeDistributionFactory.json
