@@ -1,22 +1,26 @@
 {
-    "scripts": {
-      "preinstall": "npm i -g ganache-cli@6.12.1"
-    },
-    "dependencies": {
-      "@openzeppelin/contracts": "4.9.0"
-    },
-    "devDependencies": {
-      "@nomiclabs/hardhat-ethers": "^2.0.2",
-      "@nomiclabs/hardhat-etherscan": "^2.1.1",
-      "@nomiclabs/hardhat-waffle": "^2.0.1",
-      "@typechain/ethers-v5": "^4.0.0",
-      "dotenv": "^8.2.0",
-      "ethers": "^5.1.3",
-      "hardhat": "2.17.0",
-      "hardhat-deploy": "^0.11.37",
-      "hardhat-typechain": "^0.3.5",
-      "ts-node": "^8.10.2",
-      "typechain": "^4.0.0",
-      "typescript": "^4.2.4"
-    }
+  "name": "@ichifarm/multi-rewards",
+  "description": "A modified version of the [Synthetix](https://github.com/Synthetixio/synthetix) staking rewards contract, allowing for multiple rewards tokens. Designed for use with [Curve.fi](https://github.com/curvefi) liquidity gauges.",
+  "version": "1.0.0",
+  "author": "ICHI",
+  "scripts": {
+    "preinstall": "npm i -g ganache-cli@6.12.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "4.9.0"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@typechain/ethers-v5": "^4.0.0",
+    "dotenv": "^8.2.0",
+    "ethers": "^5.1.3",
+    "hardhat": "2.17.0",
+    "hardhat-deploy": "^0.11.37",
+    "hardhat-typechain": "^0.3.5",
+    "ts-node": "^8.10.2",
+    "typechain": "^4.0.0",
+    "typescript": "^4.2.4"
+  }
 }
