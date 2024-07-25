@@ -8,6 +8,7 @@
   },
   "files": [
     "contracts",
+    "interfaces",
     "artifacts/contracts/MultiFeeDistributionFactory.sol/MultiFeeDistributionFactory.json"
   ],
   "dependencies": {
