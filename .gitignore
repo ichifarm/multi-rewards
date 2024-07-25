@@ -12,3 +12,28 @@ Flattened.sol
 venv/
 
 !build/contracts/MultiFeeDistributionFactory.json
+.env
+
+# Extended Ignore for Hardhat
+
+## directories
+.coverage_artifacts
+.coverage_cache
+.coverage_contracts
+build
+cache
+coverage
+dist
+types
+deployments
+
+.openzeppelin
+
+## files
+*.env
+*.log
+.DS_Store
+.pnp.*
+coverage.json
+package-lock.json
+yarn.lock
