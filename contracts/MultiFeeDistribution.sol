@@ -34,7 +34,7 @@ contract MultiFeeDistribution is
     }
     /********************** Contract Addresses ***********************/
 
-    /// @notice Address of LP token
+    /// @notice Address of LP token(in this context it would be the ICHIVault address)
     address public immutable stakingToken;
 
     /********************** Lock & Earn Info ***********************/
@@ -364,4 +364,21 @@ contract MultiFeeDistribution is
     function unpause() public onlyOwner {
         _unpause();
     }
+
+    /********************** Pearl Exchange Extension ***********************/
+
+    function getStakedAmounts() external view returns (uint256 stakedToken0Amount, uint256 stakedToken1Amount) {
+        // _totalStakes <= ERC20(stakingToken).balanceOf(address(this))
+        // since it's possible for this contract to have stakingToken amounts directly transferred without having being staked
+        uint256 _totalStakes = totalStakes; // SLOAD for gas savings
+        uint256 totalSupply = IICHIVault(stakingToken).totalSupply();
+        (uint256 total0, uint256 total1) = IICHIVault(stakingToken).getTotalAmounts();
+        stakedToken0Amount = (total0 * _totalStakes) / totalSupply;
+        stakedToken1Amount = (total1 * _totalStakes) / totalSupply;
+    }
+
+    function collectFees() external returns (uint256 fees0, uint256 fees1) {
+        (fees0, fees1) = IICHIVault(stakingToken).collectFees();
+    }
+
 }
