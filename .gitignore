@@ -11,7 +11,12 @@ Flattened.sol
 
 venv/
 
+# for brownie artifact
 !build/contracts/MultiFeeDistributionFactory.json
+
+# for hardhat artifact
+!artifacts/contracts/MultiFeeDistributionFactory.sol/MultiFeeDistributionFactory.json
+
 .env
 
 # Extended Ignore for Hardhat

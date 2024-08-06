@@ -58,4 +58,16 @@ contract MockVault is IICHIVault, ERC20 {
             rewardToken.transfer(farmingContract, balance);
         }
     }
+
+    function collectFees() external returns(uint256 fees0, uint256 fees1) {
+        // TODO: consider implementing mock later
+    }
+
+    function getTotalAmounts() external view returns(uint256 total0, uint256 total1) {
+        // TODO: consider implementing mock later
+    }
+
+    function pool() external view returns(address) {
+        // TODO: consider implementing mock later
+    }
 }
