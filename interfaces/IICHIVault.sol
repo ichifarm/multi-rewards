@@ -17,4 +17,9 @@ interface IICHIVault is IERC20 {
   // NOTE: this returns the total0 and total1 by the ICHIVault's 2 positions in the underlying pool
   // however this does not include any fees{0|1} that have been earned but not yet collected by the ICHIVault
   function getTotalAmounts() external view returns (uint256 total0, uint256 total1);
+
+  function farmingContract() external view returns (address);
+
+  function pool() external view returns (address);
+
 }
