@@ -9,6 +9,8 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 import {IICHIVault} from "interfaces/IICHIVault.sol";
+import {IGauge} from "interfaces/IGauge.sol";
+import {IPearlV2Pool} from "interfaces/IPearlV2Pool.sol";
 import { IMultiFeeDistributionFactory } from "interfaces/IMultiFeeDistributionFactory.sol";
 
 /// @title Multi Fee Distribution Contract
@@ -34,7 +36,7 @@ contract MultiFeeDistribution is
     }
     /********************** Contract Addresses ***********************/
 
-    /// @notice Address of LP token
+    /// @notice Address of LP token(in this context it would be the ICHIVault address)
     address public immutable stakingToken;
 
     /********************** Lock & Earn Info ***********************/
@@ -287,6 +289,14 @@ contract MultiFeeDistribution is
         RewardData memory rewardInfo = rewardData[_rewardToken];
         UserData storage userInfo = userData[_user];
 
+        // re-calculate rewardPerToken including:
+        // 1. any unaccounted/new holdings or
+        // 2. uncollected rewards
+        uint256 currentBalance = IERC20(_rewardToken).balanceOf(address(this));
+        uint256 totalBalance = currentBalance + _getUncollectedPearlRewards(_rewardToken);
+        uint256 diff =  totalBalance - rewardInfo.amount;
+        rewardInfo.rewardPerToken += diff * 1e50 / totalStakes;
+
         return (rewardInfo.rewardPerToken - userInfo.rewardPerToken[_rewardToken]) * userInfo.tokenAmount;
     }
 
@@ -364,4 +374,33 @@ contract MultiFeeDistribution is
     function unpause() public onlyOwner {
         _unpause();
     }
+
+    /********************** Pearl Exchange Extension ***********************/
+
+    function getStakedAmounts() external view returns (uint256 stakedToken0Amount, uint256 stakedToken1Amount) {
+        // _totalStakes <= ERC20(stakingToken).balanceOf(address(this))
+        // since it's possible for this contract to have stakingToken amounts directly transferred without having being staked
+        uint256 _totalStakes = totalStakes; // SLOAD for gas savings
+        uint256 totalSupply = IICHIVault(stakingToken).totalSupply();
+        (uint256 total0, uint256 total1) = IICHIVault(stakingToken).getTotalAmounts();
+        if (totalSupply > 0) {
+            stakedToken0Amount = (total0 * _totalStakes) / totalSupply;
+            stakedToken1Amount = (total1 * _totalStakes) / totalSupply;
+        }
+    }
+
+    function collectFees() external returns (uint256 fees0, uint256 fees1) {
+        (fees0, fees1) = IICHIVault(stakingToken).collectFees();
+    }
+
+    function _getUncollectedPearlRewards(address rewardToken) internal view returns (uint256 uncollected) {
+        address _stakingToken = stakingToken;
+        IPearlV2Pool pool = IPearlV2Pool(IICHIVault(_stakingToken).pool());
+        IGauge gauge = IGauge(pool.gauge());
+        if (gauge.rewardToken() == rewardToken) {
+            uncollected = gauge.getALMRewards(_stakingToken);
+        }
+        // else uncollected defaults to 0
+    }
+
 }
