@@ -383,8 +383,10 @@ contract MultiFeeDistribution is
         uint256 _totalStakes = totalStakes; // SLOAD for gas savings
         uint256 totalSupply = IICHIVault(stakingToken).totalSupply();
         (uint256 total0, uint256 total1) = IICHIVault(stakingToken).getTotalAmounts();
-        stakedToken0Amount = (total0 * _totalStakes) / totalSupply;
-        stakedToken1Amount = (total1 * _totalStakes) / totalSupply;
+        if (totalSupply > 0) {
+            stakedToken0Amount = (total0 * _totalStakes) / totalSupply;
+            stakedToken1Amount = (total1 * _totalStakes) / totalSupply;
+        }
     }
 
     function collectFees() external returns (uint256 fees0, uint256 fees1) {
