@@ -137,4 +137,83 @@ contract RewardCampaignDistributorTest is Test {
             balance + expectedReward + newExpectedReward
         );
     }
+
+    function testPermissionCheck() public {
+        address distributorAddress = factory.createRewardCampaignDistributor(arbMFD, arbRewardToken);
+        distributor = RewardCampaignDistributor(distributorAddress);
+
+        // Try setting the campaign without permission (should revert)
+        vm.expectRevert();  // Expect revert due to missing CAMPAIGN_MANAGER_ROLE
+        vm.prank(arbOwner);  // Impersonate arbOwner, who doesn't have the CAMPAIGN_MANAGER_ROLE
+        distributor.setCampaign(block.timestamp, block.timestamp + 7 days, 100 ether);
+
+        // Grant the campaign manager role to the manager
+        distributor.grantCampaignManagerRole(manager);
+
+        // Now, manager should be able to set the campaign without reverting
+        deal(arbRewardToken, address(manager), 100 ether);
+        vm.prank(manager);  // Impersonate the manager to set the campaign
+        IERC20(arbRewardToken).approve(distributorAddress, 100 ether); // Manager approves the transfer
+        vm.prank(manager);
+        distributor.setCampaign(block.timestamp, block.timestamp + 7 days, 100 ether);
+
+        // Try distributing rewards without permission (should revert)
+        vm.expectRevert();  // Expect revert due to missing DISTRIBUTOR_ROLE
+        vm.prank(arbOwner);  // Impersonate arbOwner, who doesn't have the DISTRIBUTOR_ROLE
+        distributor.distributeRewards();
+
+        // Grant the distributor role to the keeper
+        distributor.grantDistributorRole(keeper);
+
+        // Now, keeper should be able to distribute rewards without reverting
+        vm.prank(keeper);  // Impersonate the keeper to distribute rewards
+        distributor.distributeRewards();
+    }
+
+    function testDistributionEnabled() public {
+        address distributorAddress = factory.createRewardCampaignDistributor(arbMFD, arbRewardToken);
+        distributor = RewardCampaignDistributor(distributorAddress);
+
+        // Grant the campaign manager role to the manager and the distributor role to the keeper
+        distributor.grantCampaignManagerRole(manager);
+        distributor.grantDistributorRole(keeper);
+
+        // Set a campaign by the manager with 100 ARB tokens
+        deal(arbRewardToken, address(manager), 100 ether);
+        vm.prank(manager);
+        IERC20(arbRewardToken).approve(distributorAddress, 100 ether); // Manager approves the transfer
+        vm.prank(manager);
+        distributor.setCampaign(block.timestamp, block.timestamp + 7 days, 100 ether);
+
+        // Initially, distribution should be not enabled as the campaign started in this block
+        bool isEnabled = distributor.distributionEnabled();
+        assertEq(isEnabled, false, "Distribution should not be enabled yet");
+
+        // Simulate time passing (e.g., 1 day into the campaign)
+        vm.warp(block.timestamp + 1 days);
+
+        // After distributing rewards, distribution should be enabled because there is remaining balance
+        vm.prank(keeper);
+        distributor.distributeRewards();
+        // but not in the same block
+        isEnabled = distributor.distributionEnabled();
+        assertEq(isEnabled, false, "Distribution should not be enabled right after distribution");
+        vm.warp(block.timestamp + 1);
+        isEnabled = distributor.distributionEnabled();
+        assertEq(isEnabled, true, "Distribution should be enabled shortly after distribution");
+
+        // Simulate time passing to the end of the campaign
+        vm.warp(block.timestamp + 7 days);  // Move to the end of the 7-day campaign
+
+        isEnabled = distributor.distributionEnabled();
+        assertEq(isEnabled, true, "Distribution still enabled pending last distribution");
+
+        vm.prank(keeper);  // last distribution by the keeper
+        distributor.distributeRewards();
+
+        // Now that the campaign has ended, distribution should no longer be enabled
+        isEnabled = distributor.distributionEnabled();
+        assertEq(isEnabled, false, "Distribution should be disabled after campaign ends");
+    }
+
 }

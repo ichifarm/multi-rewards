@@ -13,6 +13,9 @@ interface IRewardCampaignDistributor {
     /// @param rewardToken The address of the reward token
     function initialize(address mfd, address rewardToken, address owner) external;
 
+    /// @notice Checks if the distribution is enabled
+    function distributionEnabled() external view returns (bool);
+
     /// @notice Distributes rewards to MFD
     function distributeRewards() external;
 

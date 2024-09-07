@@ -103,6 +103,13 @@ contract RewardCampaignDistributor is IRewardCampaignDistributor, ReentrancyGuar
         );
     }
 
+    function distributionEnabled() public view override returns (bool) {
+        uint256 remainingAmount = IERC20(rewardToken).balanceOf(address(this));
+        return _isActive() &&
+            block.timestamp > lastDistribution &&
+            remainingAmount > 0;
+    }
+
     /// @notice Distributes rewards to the MFD
     function distributeRewards() external override nonReentrant {
         _onlyDistributor();
