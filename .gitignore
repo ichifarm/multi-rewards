@@ -16,6 +16,8 @@ venv/
 
 # for hardhat artifact
 !artifacts/contracts/MultiFeeDistributionFactory.sol/MultiFeeDistributionFactory.json
+!artifacts/contracts/RewardCampaignDistributorFactory.sol/RewardCampaignDistributorFactory.json
+!artifacts/contracts/RewardCampaignDistributor.sol/RewardCampaignDistributor.json
 
 .env
 
