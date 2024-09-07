@@ -106,13 +106,13 @@ describe("Verify All Contracts via Etherscan", async function () {
   it("should verify RewardCampaignDistributorFactory", async () => {
 
     const {
-      MULTI_FEE_DISTRIBUTION_FACTORY,
+      REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY,
       REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
     } = requisiteData;
 
     await run("verify:verify", {
       contract: "contracts/RewardCampaignDistributorFactory.sol:RewardCampaignDistributorFactory",
-      address: MULTI_FEE_DISTRIBUTION_FACTORY,
+      address: REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY,
       constructorArguments: [
         REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
       ],
