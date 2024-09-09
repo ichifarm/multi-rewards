@@ -363,6 +363,12 @@ interface ChainConfigMinimal {
 // npx hardhat verify --list-networks
 // for configs of already supported networks(with different chainNames) look inside: @nomiclabs/hardhat-etherscan/src/ChainConfig.ts
 const etherscanConfig: Partial<Record<SupportedChainId, ChainConfigMinimal>> = {
+  [SupportedChainId.ARBITRUM_MAINNET]: {
+    urls: {
+      apiURL: "https://api.arbiscan.io/api",
+      browserURL: "https://arbiscan.io",
+    },
+  },
   [SupportedChainId.BASE_MAINNET]: {
     urls: {
       apiURL: "https://api.basescan.org/api",

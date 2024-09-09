@@ -11,10 +11,16 @@ describe("Verify All Contracts via Etherscan", async function () {
     ICHI_VAULT_FACTORY?: string;
     MULTI_FEE_DISTRIBUTION_FACTORY?: string;
     MULTI_FEE_DISTRIBUTION?: string;
+    REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY?: string;
+    REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION?: string;
+    REWARD_CAMPAIGN_DISTRIBUTOR?: string;
   } = {
     ICHI_VAULT_FACTORY: "",
     MULTI_FEE_DISTRIBUTION_FACTORY: "",
     MULTI_FEE_DISTRIBUTION: "",
+    REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY: "",
+    REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION: "",
+    REWARD_CAMPAIGN_DISTRIBUTOR: "",
   };
 
   let deployer: SignerWithAddress, governor: SignerWithAddress, lp: SignerWithAddress;
@@ -44,11 +50,6 @@ describe("Verify All Contracts via Etherscan", async function () {
     // - - - - - Validate MULTI_FEE_DISTRIBUTION_FACTORY - - - - -
     if (!MULTI_FEE_DISTRIBUTION_FACTORY) {
       throw new Error(`Undefined MULTI_FEE_DISTRIBUTION_FACTORY`);
-    }
-
-    // - - - - - Validate MULTI_FEE_DISTRIBUTION - - - - -
-    if (!MULTI_FEE_DISTRIBUTION) {
-      throw new Error(`Undefined MULTI_FEE_DISTRIBUTION`);
     }
 
   });
@@ -93,10 +94,59 @@ describe("Verify All Contracts via Etherscan", async function () {
       MULTI_FEE_DISTRIBUTION
     } = requisiteData;
 
+    if (MULTI_FEE_DISTRIBUTION) {
+      await run("verify:verify", {
+        contract: "contracts/MultiFeeDistribution.sol:MultiFeeDistribution",
+        address: MULTI_FEE_DISTRIBUTION,
+      });
+    }
+
+  });
+
+  it("should verify RewardCampaignDistributorFactory", async () => {
+
+    const {
+      REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY,
+      REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
+    } = requisiteData;
+
     await run("verify:verify", {
-      contract: "contracts/MultiFeeDistribution.sol:MultiFeeDistribution",
-      address: MULTI_FEE_DISTRIBUTION,
+      contract: "contracts/RewardCampaignDistributorFactory.sol:RewardCampaignDistributorFactory",
+      address: REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY,
+      constructorArguments: [
+        REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
+      ],
     });
+
+  });
+
+  it("should verify RewardCampaignDistributor Implementation", async () => {
+
+    const {
+      REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION
+    } = requisiteData;
+
+    if (REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION) {
+      await run("verify:verify", {
+        contract: "contracts/RewardCampaignDistributor.sol:RewardCampaignDistributor",
+        address: REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
+      });
+    }
+
+  });
+
+  it("should verify RewardCampaignDistributor", async () => {
+
+    const {
+      REWARD_CAMPAIGN_DISTRIBUTOR
+    } = requisiteData;
+
+    if (REWARD_CAMPAIGN_DISTRIBUTOR) {
+      await run("verify:verify", {
+        contract: "contracts/RewardCampaignDistributor.sol:RewardCampaignDistributor",
+        address: REWARD_CAMPAIGN_DISTRIBUTOR,
+      });
+    }
 
   });
 

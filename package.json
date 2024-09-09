@@ -9,7 +9,9 @@
   "files": [
     "contracts",
     "interfaces",
-    "artifacts/contracts/MultiFeeDistributionFactory.sol/MultiFeeDistributionFactory.json"
+    "artifacts/contracts/MultiFeeDistributionFactory.sol/MultiFeeDistributionFactory.json",
+    "artifacts/contracts/RewardCampaignDistributorFactory.sol/RewardCampaignDistributorFactory.json",
+    "artifacts/contracts/RewardCampaignDistributor.sol/RewardCampaignDistributor.json"
   ],
   "dependencies": {
     "@openzeppelin/contracts": "4.9.0"
