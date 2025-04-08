@@ -48,6 +48,7 @@ const chainNames: Record<SupportedChainId, string> = {
   [SupportedChainId.REAL]: "real",
   [SupportedChainId.HARDHAT]: "hardhat",
   [SupportedChainId.AVALANCHE_MAINNET]: "avalanche-mainnet",
+  [SupportedChainId.INK_MAINNET]: "ink-mainnet",
   [SupportedChainId.SEPOLIA]: "sepolia",
   [SupportedChainId.ARBITRUM_MAINNET]: "arbitrum-mainnet",
   [SupportedChainId.POLYGON_MUMBAI]: "polygon-mumbai",
@@ -205,6 +206,10 @@ const fallbackRpcUrls: Record<SupportedChainId, string[]> = {
     "https://avalanche.blockpi.network/v1/rpc/public",
     "https://avalanche.drpc.org",
   ],
+  [SupportedChainId.INK_MAINNET]: [
+    "https://rpc-gel.inkonchain.com",
+    "https://rpc-qnd.inkonchain.com",
+  ],
   [SupportedChainId.SEPOLIA]: [
     "https://1rpc.io/sepolia"
   ],
@@ -316,6 +321,7 @@ const defaultRpcUrls: Record<SupportedChainId, string> = {
   [SupportedChainId.REAL]: fallbackRpcUrls[SupportedChainId.REAL][0],
   [SupportedChainId.HARDHAT]: fallbackRpcUrls[SupportedChainId.HARDHAT][0],
   [SupportedChainId.AVALANCHE_MAINNET]: fallbackRpcUrls[SupportedChainId.AVALANCHE_MAINNET][0],
+  [SupportedChainId.INK_MAINNET]: fallbackRpcUrls[SupportedChainId.INK_MAINNET][0],
   [SupportedChainId.SEPOLIA]: fallbackRpcUrls[SupportedChainId.SEPOLIA][0],
   [SupportedChainId.ARBITRUM_MAINNET]: fallbackRpcUrls[SupportedChainId.ARBITRUM_MAINNET][0],
   [SupportedChainId.POLYGON_MUMBAI]: fallbackRpcUrls[SupportedChainId.POLYGON_MUMBAI][0],
@@ -474,6 +480,12 @@ const etherscanConfig: Partial<Record<SupportedChainId, ChainConfigMinimal>> = {
       browserURL: "https://hekla.taikoscan.network/"
     },
   },
+  [SupportedChainId.INK_MAINNET]: {
+    urls: { // a blockscout explorer
+      apiURL: "https://explorer.inkonchain.com/api",
+      browserURL: "https://explorer.inkonchain.com",
+    },
+  },
 };
 
 // Utility type to extract and enforce keys from etherscanConfig
@@ -502,6 +514,7 @@ const etherscanApiKeys: EnforcedApiKeys<typeof etherscanConfig> = {
   [SupportedChainId.FANTOM_MAINNET]: process.env.FTMSCAN_API_KEY || "",
   [SupportedChainId.X1_TESTNET]: dummyApiKey, // no api key required
   [SupportedChainId.TAIKO_HEKLA]: dummyApiKey, // no api key required
+  [SupportedChainId.INK_MAINNET]: dummyApiKey, // no api key required
 
   // extra optional SupportedChainId
   [SupportedChainId.ARBITRUM_MAINNET]: process.env.ARBISCAN_API_KEY || "",
