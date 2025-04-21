@@ -1,6 +1,5 @@
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-contract-sizer";
-import "@nomiclabs/hardhat-etherscan";
 import { config as dotenvConfig } from "dotenv";
 import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
@@ -42,6 +41,7 @@ const chainNames: Record<SupportedChainId, string> = {
   [SupportedChainId.GANACHE]: "ganache",
   [SupportedChainId.MANTLE_MAINNET]: "mantle-mainnet",
   [SupportedChainId.EVMOS_MAINNET]: "evmos-mainnet",
+  [SupportedChainId.MONAD_TESTNET]: "monad-testnet",
   [SupportedChainId.ARTHERA_MAINNET]: "arthera-mainnet",
   [SupportedChainId.ARTHERA_TESTNET]: "arthera-testnet",
   [SupportedChainId.UNREAL]: "unreal",
@@ -183,6 +183,9 @@ const fallbackRpcUrls: Record<SupportedChainId, string[]> = {
     "https://evmosevm.rpc.stakin-nodes.com",
     "https://evmos-json.antrixy.org",
   ],
+  [SupportedChainId.MONAD_TESTNET]: [
+    "https://testnet-rpc.monad.xyz",
+  ],
   [SupportedChainId.ARTHERA_MAINNET]: [
     "https://rpc.arthera.net"
   ],
@@ -315,6 +318,7 @@ const defaultRpcUrls: Record<SupportedChainId, string> = {
   [SupportedChainId.GANACHE]: fallbackRpcUrls[SupportedChainId.GANACHE][0],
   [SupportedChainId.MANTLE_MAINNET]: fallbackRpcUrls[SupportedChainId.MANTLE_MAINNET][0],
   [SupportedChainId.EVMOS_MAINNET]: fallbackRpcUrls[SupportedChainId.EVMOS_MAINNET][0],
+  [SupportedChainId.MONAD_TESTNET]: fallbackRpcUrls[SupportedChainId.MONAD_TESTNET][0],
   [SupportedChainId.ARTHERA_MAINNET]: fallbackRpcUrls[SupportedChainId.ARTHERA_MAINNET][0],
   [SupportedChainId.ARTHERA_TESTNET]: fallbackRpcUrls[SupportedChainId.ARTHERA_TESTNET][0],
   [SupportedChainId.UNREAL]: fallbackRpcUrls[SupportedChainId.UNREAL][0],
@@ -385,6 +389,13 @@ const etherscanConfig: Partial<Record<SupportedChainId, ChainConfigMinimal>> = {
     urls: {
       apiURL: "https://escan.live/api",
       browserURL: "https://escan.live"
+    },
+  },
+  [SupportedChainId.MONAD_TESTNET]: {
+    urls: {
+      // NOTE: this is NOT an etherscan compatible explorer
+      apiURL: "https://sourcify-api-monad.blockvision.org",
+      browserURL: "https://testnet.monadexplorer.com/"
     },
   },
   [SupportedChainId.ARTHERA_MAINNET]: {
@@ -499,6 +510,7 @@ const etherscanApiKeys: EnforcedApiKeys<typeof etherscanConfig> = {
   // required SupportedChainId since specified in etherscanConfig
   [SupportedChainId.BASE_MAINNET]: process.env.BASESCAN_API_KEY || "",
   [SupportedChainId.EVMOS_MAINNET]: process.env.ESCAN_API_KEY || "",
+  [SupportedChainId.MONAD_TESTNET]: dummyApiKey,
   [SupportedChainId.ARTHERA_MAINNET]: dummyApiKey,
   [SupportedChainId.ARTHERA_TESTNET]: dummyApiKey,
   [SupportedChainId.UNREAL]: dummyApiKey,
@@ -532,7 +544,9 @@ const etherscanApiKeys: EnforcedApiKeys<typeof etherscanConfig> = {
 function verifyConfigIntegrity(config: Partial<Record<SupportedChainId, ChainConfigMinimal>>, apiKeys: Record<SupportedChainId, string>) {
   for (const key in config) {
     if (!(key in apiKeys)) {
-      throw new Error(`Explorer API key for ${SupportedChainId[key as any]} is missing`);
+      const msg = `Explorer API key for ${SupportedChainId[key as any]} is missing`;
+      // console.warn(msg);
+      throw new Error(msg);
     }
   }
 };
@@ -577,7 +591,10 @@ const chainConfigs = Object.entries(chainNames).reduce((config, [chainIdString, 
 const chainVerifyApiKeys = Object.entries(chainNames).reduce((config, [chainIdString, chainName]) => {
   const chainId = Number(chainIdString);
   if (isValidChainId(chainId)) {
-    config[chainName] = etherscanApiKeys[chainId] || "";
+    const apiKey = etherscanApiKeys[chainId];
+    if (apiKey) {
+      config[chainName] = apiKey;
+    }
     return config;
   } else {
     throw new Error("Invalid chainId");
@@ -610,6 +627,15 @@ const config: HardhatUserConfig = {
     },
     customChains: chainConfigsArray
   },
+  // For Monad verification on sourcify
+  // etherscan: {
+  //   enabled: false
+  // },
+  // sourcify: {
+  //   enabled: true,
+  //   apiUrl: "https://sourcify-api-monad.blockvision.org",
+  //   browserUrl: "https://testnet.monadexplorer.com"
+  // },
   gasReporter: {
     currency: "USD",
     enabled: process.env.REPORT_GAS ? true : false,

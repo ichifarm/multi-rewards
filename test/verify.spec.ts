@@ -31,8 +31,8 @@ describe("Verify All Contracts via Etherscan", async function () {
       throw new Error(`To verify on a specific etherscan(not hardhat) specify "--network" cmd flag`);
     }
 
-    const signers = await ethers.getSigners();
-    [deployer, governor, lp,] = signers;
+    // const signers = await ethers.getSigners();
+    // [deployer, governor, lp,] = signers;
 
     // validate all requisite data and populate requisite data in allData before attempting to proceed with steps
 
