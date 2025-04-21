@@ -76,6 +76,7 @@ contract MultiFeeDistribution is
         uint256 reward
     );
     event Recovered(address indexed token, uint256 amount);
+    event RewardsUpdated();
 
     /********************** Errors ***********************/
     error AddressZero();
@@ -306,6 +307,7 @@ contract MultiFeeDistribution is
                 r.amount = currentBalance;
             }
         }
+        emit RewardsUpdated();
     }
 
     function _calculateClaimable(address _onBehalf, address _rewardToken) internal {
