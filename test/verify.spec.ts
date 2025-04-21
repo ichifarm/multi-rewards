@@ -110,6 +110,10 @@ describe("Verify All Contracts via Etherscan", async function () {
       REWARD_CAMPAIGN_DISTRIBUTOR_IMPLEMENTATION,
     } = requisiteData;
 
+    if (!REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY) {
+      return this.ctx.skip();
+    }
+
     await run("verify:verify", {
       contract: "contracts/RewardCampaignDistributorFactory.sol:RewardCampaignDistributorFactory",
       address: REWARD_CAMPAIGN_DISTRIBUTOR_FACTORY,
