@@ -10,13 +10,15 @@ import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 import {IICHIVault} from "interfaces/IICHIVault.sol";
 import { IMultiFeeDistributionFactory } from "interfaces/IMultiFeeDistributionFactory.sol";
+import { BatcherSupported } from "./base/BatcherSupported.sol";
 
 /// @title Multi Fee Distribution Contract
 /// @author Gamma
 /// @dev All function calls are currently implemented without side effects
 contract MultiFeeDistribution is
     Pausable,
-    Ownable
+    Ownable,
+    BatcherSupported
 {
     using SafeERC20 for IERC20;
 
@@ -86,13 +88,21 @@ contract MultiFeeDistribution is
     error IsStakingToken();
     error InvalidAmount();
 
-    constructor() {
+    constructor() BatcherSupported(_decodeBatcherFactory()) {
         IMultiFeeDistributionFactory factory = IMultiFeeDistributionFactory(msg.sender);
         bytes memory _deployData = factory.cachedDeployData();
-        (address _stakingToken) = abi.decode(_deployData, (address));
+        (address _stakingToken, ) = abi.decode(_deployData, (address, address));
 
         if (_stakingToken == address(0)) revert AddressZero();
         stakingToken = _stakingToken;
+    }
+
+    /// @dev Helper called in base constructor argument - decodes batcher factory from cached data
+    function _decodeBatcherFactory() private view returns (address batcherFactory_) {
+        (, batcherFactory_) = abi.decode(
+            IMultiFeeDistributionFactory(msg.sender).cachedDeployData(),
+            (address, address)
+        );
     }
 
     /********************** Setters ***********************/
@@ -224,8 +234,9 @@ contract MultiFeeDistribution is
             _calculateClaimable(onBehalfOf, rewardTokens[i]);
         }
 
+        address effectiveUser = _getEffectiveUser();
         IERC20(stakingToken).safeTransferFrom(
-            msg.sender,
+            effectiveUser,
             address(this),
             amount
         );
@@ -237,7 +248,7 @@ contract MultiFeeDistribution is
     }
 
     function unstake(uint256 amount) external {
-        _unstake(amount, msg.sender);
+        _unstake(amount, _getEffectiveUser());
     }
 
     function _unstake(uint256 amount, address onBehalfOf) internal {
@@ -268,7 +279,7 @@ contract MultiFeeDistribution is
      * @notice Claim all pending staking rewards.
      */
     function getAllRewards() external returns (uint256[] memory claimableAmounts) {
-        claimableAmounts = _getReward(msg.sender, rewardTokens);
+        claimableAmounts = _getReward(_getEffectiveUser(), rewardTokens);
     }
 
     function updateReward() external {
