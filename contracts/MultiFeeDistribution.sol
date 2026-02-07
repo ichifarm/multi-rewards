@@ -234,7 +234,7 @@ contract MultiFeeDistribution is
             _calculateClaimable(onBehalfOf, rewardTokens[i]);
         }
 
-        address effectiveUser = _getEffectiveUser();
+        address effectiveUser = msg.sender; // NOTE: we don't use _getEffectiveUser() as the staker will be the batcher in the preferred flow
         IERC20(stakingToken).safeTransferFrom(
             effectiveUser,
             address(this),
