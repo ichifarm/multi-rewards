@@ -10,6 +10,7 @@ interface IMultiFeeDistributionFactory {
   function bytecodeHash() external view returns (bytes32);
   function cachedDeployData() external view returns (bytes memory);
   function vaultToStaker(address ichiVault) external view returns (address staker);
+  function batcherFactory() external view returns (address);
 
   // stateful functions
   function deployStaker(address ichiVault) external returns (address staker);

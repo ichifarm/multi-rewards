@@ -17,9 +17,11 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
     mapping(address => address) public override vaultToStaker;
 
     address public immutable ichiFactory;
+    address public immutable override batcherFactory;
 
-    constructor(address _ichiFactory) {
+    constructor(address _ichiFactory, address _batcherFactory) {
         ichiFactory = _ichiFactory;
+        batcherFactory = _batcherFactory;
     }
 
     function deployStaker(address ichiVault) external override returns (address staker) {
@@ -30,7 +32,7 @@ contract MultiFeeDistributionFactory is IMultiFeeDistributionFactory, Ownable {
         // it's not easily possible to check if an ichiVault is registered with v1 of the ICHIVaultFactory
         require(IICHIVault(ichiVault).ichiVaultFactory() == ichiFactory, "INVALID_VF");
 
-        bytes memory _deployData = abi.encode(ichiVault);
+        bytes memory _deployData = abi.encode(ichiVault, batcherFactory);
         cachedDeployData = _deployData;
 
         bytes32 salt = keccak256(_deployData);

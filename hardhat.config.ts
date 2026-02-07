@@ -38,6 +38,7 @@ const chainNames: Record<SupportedChainId, string> = {
   [SupportedChainId.HEDERA_MAINNET]: "hedera-mainnet",
   [SupportedChainId.HEDERA_TESTNET]: "hedera-testnet",
   [SupportedChainId.POLYGON_ZKEVM]: "polygon-zkevm",
+  [SupportedChainId.SEI_TESTNET]: "sei-testnet",
   [SupportedChainId.GANACHE]: "ganache",
   [SupportedChainId.MANTLE_MAINNET]: "mantle-mainnet",
   [SupportedChainId.EVMOS_MAINNET]: "evmos-mainnet",
@@ -150,6 +151,10 @@ const fallbackRpcUrls: Record<SupportedChainId, string[]> = {
     "https://polygon-zkevm.drpc.org",
     "https://polygon-zkevm-mainnet.public.blastapi.io",
     "https://polygon-zkevm.blockpi.network/v1/rpc/public",
+  ],
+  [SupportedChainId.SEI_TESTNET]: [
+    "https://sei-testnet-public.nodies.app",
+    "https://evm-rpc-testnet.sei-apis.com",
   ],
   [SupportedChainId.GANACHE]: [
     "http://localhost:8545"
@@ -315,6 +320,7 @@ const defaultRpcUrls: Record<SupportedChainId, string> = {
   [SupportedChainId.HEDERA_MAINNET]: fallbackRpcUrls[SupportedChainId.HEDERA_MAINNET][0],
   [SupportedChainId.HEDERA_TESTNET]: fallbackRpcUrls[SupportedChainId.HEDERA_TESTNET][0],
   [SupportedChainId.POLYGON_ZKEVM]: fallbackRpcUrls[SupportedChainId.POLYGON_ZKEVM][0],
+  [SupportedChainId.SEI_TESTNET]: fallbackRpcUrls[SupportedChainId.SEI_TESTNET][0],
   [SupportedChainId.GANACHE]: fallbackRpcUrls[SupportedChainId.GANACHE][0],
   [SupportedChainId.MANTLE_MAINNET]: fallbackRpcUrls[SupportedChainId.MANTLE_MAINNET][0],
   [SupportedChainId.EVMOS_MAINNET]: fallbackRpcUrls[SupportedChainId.EVMOS_MAINNET][0],
@@ -497,6 +503,12 @@ const etherscanConfig: Partial<Record<SupportedChainId, ChainConfigMinimal>> = {
       browserURL: "https://explorer.inkonchain.com",
     },
   },
+  [SupportedChainId.SEI_TESTNET]: {
+    urls: {
+      apiURL: `https://api.etherscan.io/v2/api?chainid=1328&apikey=${process.env.ETHERSCAN_V2_API_KEY}`,
+      browserURL:  "https://testnet.seiscan.io/",
+    },
+  },
 };
 
 // Utility type to extract and enforce keys from etherscanConfig
@@ -524,6 +536,7 @@ const etherscanApiKeys: EnforcedApiKeys<typeof etherscanConfig> = {
   [SupportedChainId.LINEA_MAINNET]: process.env.LINEASCAN_API_KEY || "",
   [SupportedChainId.OPBNB_MAINNET]: process.env.OPBNBSCAN_API_KEY || "",
   [SupportedChainId.FANTOM_MAINNET]: process.env.FTMSCAN_API_KEY || "",
+  [SupportedChainId.SEI_TESTNET]: process.env.ETHERSCAN_V2_API_KEY || "",
   [SupportedChainId.X1_TESTNET]: dummyApiKey, // no api key required
   [SupportedChainId.TAIKO_HEKLA]: dummyApiKey, // no api key required
   [SupportedChainId.INK_MAINNET]: dummyApiKey, // no api key required
